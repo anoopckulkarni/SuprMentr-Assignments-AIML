@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate dates-map.json from dated Python files in month folders."""
+"""Generate dates-map.xml from dated Python files in month folders."""
 
 from __future__ import annotations
 
-import json
 import re
 from datetime import date
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 RE_DATE_FILE = re.compile(r"^(\d{2})-(\d{2})-(\d{4})(?:\s*-\s*([A-Za-z]+))?\.py$")
 MONTH_FOLDERS = {
@@ -72,16 +72,33 @@ def build_mapping(repo_root: Path) -> dict[str, dict[str, list[str]]]:
     return mapping
 
 
+def _build_xml(mapping: dict[str, dict[str, list[str]]]) -> ET.Element:
+    root = ET.Element("root")
+    generated_on = ET.SubElement(root, "generatedOn")
+    generated_on.text = date.today().isoformat()
+
+    folders_node = ET.SubElement(root, "folders")
+    for month_name, labels in mapping.items():
+        month_node = ET.SubElement(folders_node, month_name)
+        for label, dates in labels.items():
+            for date_value in dates:
+                label_node = ET.SubElement(month_node, label)
+                label_node.text = date_value
+
+    return root
+
+
 def main() -> int:
     repo_root = Path(__file__).resolve().parent.parent
-    output_file = repo_root / "dates-map.json"
+    output_file = repo_root / "dates-map.xml"
 
-    payload = {
-        "generatedOn": date.today().isoformat(),
-        "folders": build_mapping(repo_root),
-    }
-
-    output_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    root = _build_xml(build_mapping(repo_root))
+    ET.indent(root, space="    ")
+    xml_content = ET.tostring(root, encoding="unicode")
+    output_file.write_text(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" + xml_content + "\n",
+        encoding="utf-8",
+    )
     print(f"Updated {output_file.name}")
     return 0
 

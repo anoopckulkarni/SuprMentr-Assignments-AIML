@@ -2,14 +2,14 @@
 set -e
 
 if command -v python >/dev/null 2>&1; then
-  python scripts/generate_dates_json.py
+  python scripts/generate_dates_xml.py
 elif command -v python3 >/dev/null 2>&1; then
-  python3 scripts/generate_dates_json.py
+  python3 scripts/generate_dates_xml.py
 elif command -v py >/dev/null 2>&1; then
-  py -3 scripts/generate_dates_json.py
+  py -3 scripts/generate_dates_xml.py
 else
-  echo "Python is required to generate dates-map.json" >&2
+  echo "Python is required to generate dates-map.xml" >&2
   exit 1
 fi
 
-git add dates-map.json
+git add dates-map.xml
