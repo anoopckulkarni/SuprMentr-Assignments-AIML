@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate dates-map.xml from dated Python files in month folders."""
+"""Generate dates-map.xml from dated files/folders in month folders."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-RE_DATE_FILE = re.compile(r"^(\d{2})-(\d{2})-(\d{4})(?:\s*-\s*([A-Za-z]+))?\.py$")
+RE_DATE_LABEL = re.compile(r"^(\d{2})-(\d{2})-(\d{4})(?:\s*-\s*([A-Za-z]+))?$")
 MONTH_FOLDERS = {
     "january",
     "february",
@@ -35,6 +35,16 @@ def _normalize_label(raw_label: str | None) -> str:
     return raw_label.strip().title()
 
 
+def _parse_dated_name(raw_name: str) -> tuple[int, int, int, str] | None:
+    match = RE_DATE_LABEL.match(raw_name)
+    if not match:
+        return None
+
+    day, month, year = map(int, match.groups()[:3])
+    label = _normalize_label(match.group(4))
+    return year, month, day, label
+
+
 def build_mapping(repo_root: Path) -> dict[str, dict[str, list[str]]]:
     mapping: dict[str, dict[str, list[str]]] = {}
 
@@ -46,13 +56,17 @@ def build_mapping(repo_root: Path) -> dict[str, dict[str, list[str]]]:
             "Assignment": [],
             "Task": [],
         }
-        for file in folder.glob("*.py"):
-            match = RE_DATE_FILE.match(file.name)
-            if not match:
+        for child in folder.iterdir():
+            parsed: tuple[int, int, int, str] | None = None
+            if child.is_file() and child.suffix.lower() == ".py":
+                parsed = _parse_dated_name(child.stem)
+            elif child.is_dir():
+                parsed = _parse_dated_name(child.name)
+
+            if not parsed:
                 continue
 
-            day, month, year = map(int, match.groups()[:3])
-            label = _normalize_label(match.group(4))
+            year, month, day, label = parsed
             parsed_dates.setdefault(label, []).append((year, month, day))
 
         if not any(parsed_dates.values()):
