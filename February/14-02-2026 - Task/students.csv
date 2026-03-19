@@ -1,0 +1,9 @@
+name,maths,science,english,dept
+Alice,85.0,92,78,CS
+Bob,90.0,85,95,CS
+Charlie,78.0,80,82,EC
+David,,88,91,EC
+Eve,92.0,95,89,CS
+Frank,45.0,50,40,ME
+Grace,88.0,70,85,ME
+Heidi,76.0,79,80,CS
